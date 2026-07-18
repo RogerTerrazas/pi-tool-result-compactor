@@ -164,7 +164,7 @@ const DEFAULT_CONFIG: ProxyConfig = {
   stepsInOutput: false,
   inspectorPrompt: DEFAULT_INSPECTOR_PROMPT,
   inspectorInputTemplate: DEFAULT_INSPECTOR_INPUT_TEMPLATE,
-  showHeader: false,
+  showHeader: true,
   headerTemplate: "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
   includeEfficiencyInOutput: true,
 };

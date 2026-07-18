@@ -57,9 +57,9 @@ Command behavior:
 - `steps` toggles whether the inspector trace is included in parent-visible output.
 - `reload` reloads configuration from disk.
 
-When a tool result is compacted, the parent-visible output is the distilled result only by default. The full raw result is not included in the compacted message. Metadata about the inspection is stored in the tool result details under `toolResultCompactor`.
+When a tool result is compacted, the parent-visible output includes a compact header followed by the distilled result. The full raw result is not included in the compacted message. Metadata about the inspection is stored in the tool result details under `toolResultCompactor`.
 
-If you want visible markers, enable `showHeader` in the config.
+Set `showHeader` to `false` in the config if you do not want the visible marker.
 
 ## Configuration
 
@@ -79,7 +79,7 @@ The extension works without configuration. Defaults are equivalent to:
   "stepsInOutput": false,
   "inspectorPrompt": "You are a context-preserving tool-output compactor...",
   "inspectorInputTemplate": "Goal:\n{goal}\n\nTool:\n{toolName}\n\nArguments:\n{toolArgs}\n\nRaw output:\n{rawOutput}",
-  "showHeader": false,
+  "showHeader": true,
   "headerTemplate": "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
   "includeEfficiencyInOutput": true
 }
@@ -116,7 +116,7 @@ Then run `/toolcompact reload` inside Pi after changing the file.
 | `stepsInOutput` | boolean | `false` | Include the inspector trace in parent-visible output. |
 | `inspectorPrompt` | string | built-in compact prompt | System prompt used by the inspector model. |
 | `inspectorInputTemplate` | string | built-in template | User prompt template. Supports `{goal}`, `{toolName}`, `{toolArgs}`, `{rawOutput}`, `{rawChars}`. |
-| `showHeader` | boolean | `false` | Prepend a compact marker before the distilled output. |
+| `showHeader` | boolean | `true` | Prepend a compact marker before the distilled output. |
 | `headerTemplate` | string | `[compacted {toolName}: {rawChars}→{distilledChars} chars]` | Header template when `showHeader` is true. Also supports `{verdict}` and `{inspectorModel}`. |
 | `includeEfficiencyInOutput` | boolean | `true` | Keep the final `Efficiency:` metadata line visible to the parent agent. The verdict is stored in details either way. |
 
