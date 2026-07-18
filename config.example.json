@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "inspectorModel": null,
+  "maxTokens": 2000,
+  "minChars": 0,
+  "maxInputChars": 80000,
+  "excludeTools": ["edit", "write"],
+  "includeTools": [],
+  "passThroughErrors": true,
+  "recordSteps": true,
+  "stepsInOutput": false
+}

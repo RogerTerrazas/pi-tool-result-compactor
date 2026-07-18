@@ -1,0 +1,27 @@
+{
+  "name": "pi-tool-result-compactor",
+  "version": "1.0.0",
+  "description": "A Pi extension that compacts verbose tool outputs with an inspector model before they enter agent context.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "coding-agent",
+    "tool-output",
+    "compaction"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "check": "node -e \"JSON.parse(require('fs').readFileSync('config.example.json','utf8')); console.log('config ok')\"",
+    "build": "echo 'No build step required; Pi loads the TypeScript extension directly.'"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
