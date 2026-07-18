@@ -84,16 +84,17 @@ The extension works without configuration. Defaults are equivalent to:
 }
 ```
 
-Configuration can be provided in either of these ways:
+Configuration is loaded only from this project-local path:
 
-1. Set `PI_TOOL_RESULT_COMPACTOR_CONFIG` to a JSON file path.
-2. Place `config.json` next to `extensions/index.ts` in the installed package.
+```text
+.pi/tool-result-compactor.json
+```
 
-Example:
+Create the file in the project where you run Pi:
 
 ```bash
-export PI_TOOL_RESULT_COMPACTOR_CONFIG=/path/to/tool-result-compactor.json
-pi
+mkdir -p .pi
+cp config.example.json .pi/tool-result-compactor.json
 ```
 
 Then run `/toolcompact reload` inside Pi after changing the file.

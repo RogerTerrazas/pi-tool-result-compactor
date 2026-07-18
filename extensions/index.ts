@@ -25,13 +25,13 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
-import type {
-  ExtensionAPI,
-  ExtensionContext,
-  ToolResultEvent,
+import {
+  CONFIG_DIR_NAME,
+  type ExtensionAPI,
+  type ExtensionContext,
+  type ToolResultEvent,
 } from "@earendil-works/pi-coding-agent";
 import { complete } from "@earendil-works/pi-ai/compat";
 import type { Context, Model } from "@earendil-works/pi-ai";
@@ -103,30 +103,17 @@ const DEFAULT_CONFIG: ProxyConfig = {
   stepsInOutput: false,
 };
 
-function loadConfig(): ProxyConfig {
-  const here = dirname(fileURLToPath(import.meta.url));
-  const configuredPath = process.env.PI_TOOL_RESULT_COMPACTOR_CONFIG;
-  const candidates = [
-    configuredPath
-      ? isAbsolute(configuredPath)
-        ? configuredPath
-        : join(process.cwd(), configuredPath)
-      : null,
-    join(here, "config.json"),
-  ].filter(Boolean) as string[];
+function loadConfig(cwd = process.cwd()): ProxyConfig {
+  const configPath = join(cwd, CONFIG_DIR_NAME, "tool-result-compactor.json");
 
-  for (const path of candidates) {
-    try {
-      if (!existsSync(path)) continue;
-      const raw = readFileSync(path, "utf8");
-      const parsed = JSON.parse(raw) as Partial<ProxyConfig>;
-      return { ...DEFAULT_CONFIG, ...parsed };
-    } catch {
-      // Ignore invalid/unreadable config and continue to the next candidate.
-    }
+  try {
+    if (!existsSync(configPath)) return { ...DEFAULT_CONFIG };
+    const raw = readFileSync(configPath, "utf8");
+    const parsed = JSON.parse(raw) as Partial<ProxyConfig>;
+    return { ...DEFAULT_CONFIG, ...parsed };
+  } catch {
+    return { ...DEFAULT_CONFIG };
   }
-
-  return { ...DEFAULT_CONFIG };
 }
 
 // -----------------------------------------------------------------------------
@@ -237,7 +224,7 @@ export default function (pi: ExtensionAPI) {
   };
 
   pi.on("session_start", async (_event, ctx) => {
-    cfg = loadConfig();
+    cfg = loadConfig(ctx.cwd);
     if (cfg.enabled) {
       ctx.ui.setStatus?.("toolcompact", "tool-compact: on");
     }
@@ -384,7 +371,7 @@ export default function (pi: ExtensionAPI) {
       if (arg === "on") cfg.enabled = true;
       else if (arg === "off") cfg.enabled = false;
       else if (arg === "steps") cfg.stepsInOutput = !cfg.stepsInOutput;
-      else if (arg === "reload") cfg = loadConfig();
+      else if (arg === "reload") cfg = loadConfig(ctx.cwd);
 
       const model = cfg.inspectorModel ?? "parent model";
       const inc = cfg.includeTools.length ? cfg.includeTools.join(",") : "all (minus excluded)";
