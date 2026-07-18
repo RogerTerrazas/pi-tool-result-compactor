@@ -2,7 +2,7 @@
   "enabled": true,
   "inspectorModel": null,
   "maxTokens": 40000,
-  "minChars": 500,
+  "minChars": 600,
   "maxInputChars": 200000,
   "excludeTools": ["edit", "write", "read"],
   "includeTools": [],

@@ -70,7 +70,7 @@ The extension works without configuration. Defaults are equivalent to:
   "enabled": true,
   "inspectorModel": null,
   "maxTokens": 40000,
-  "minChars": 500,
+  "minChars": 600,
   "maxInputChars": 200000,
   "excludeTools": ["edit", "write", "read"],
   "includeTools": [],
@@ -107,7 +107,7 @@ Then run `/toolcompact reload` inside Pi after changing the file.
 | `enabled` | boolean | `true` | Enables or disables compaction. |
 | `inspectorModel` | string/null | `null` | Optional inspector model in `provider/model-id` form. `null` uses the active Pi model. |
 | `maxTokens` | number | `40000` | Maximum tokens for the inspector response. |
-| `minChars` | number | `500` | Skip compaction for outputs shorter than this many characters. |
+| `minChars` | number | `600` | Skip compaction for outputs shorter than this many characters. |
 | `maxInputChars` | number | `200000` | Truncate raw tool output before sending it to the inspector model. |
 | `excludeTools` | string[] | `["edit", "write", "read"]` | Tool names that should never be compacted. |
 | `includeTools` | string[] | `[]` | If non-empty, only these tool names are compacted. |

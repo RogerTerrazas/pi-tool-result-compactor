@@ -153,7 +153,7 @@ const DEFAULT_CONFIG: ProxyConfig = {
   enabled: true,
   inspectorModel: null,
   maxTokens: 40_000,
-  minChars: 500,
+  minChars: 600,
   maxInputChars: 200_000,
   // Mutations, interactive prompts, and delegation tooling itself are not
   // useful to distill -- pass them through.
