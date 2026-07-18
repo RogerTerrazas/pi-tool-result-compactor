@@ -2,7 +2,7 @@
 
 A generic [Pi](https://pi.dev) extension that keeps agent context cleaner by compacting verbose text tool outputs before they are added to the parent conversation.
 
-The extension intercepts text-based tool and MCP results, asks an inspector model to extract the useful information, and returns a shorter Markdown summary to the agent. If inspection fails for any reason, the original tool result is passed through unchanged.
+The extension intercepts text-based tool and MCP results, asks an inspector model to extract the useful information, and returns a distilled Markdown summary to the agent. If inspection fails for any reason, the original tool result is passed through unchanged.
 
 ## Features
 
@@ -11,7 +11,15 @@ The extension intercepts text-based tool and MCP results, asks an inspector mode
 - Uses the current Pi model by default, or a configured inspector model.
 - Skips image results and, by default, skips write/edit-style tools.
 - Runtime command for toggling, status, config reloads, and trace visibility.
-- Fails safely: auth errors, model errors, aborts, or invalid outputs fall back to the original result.
+- Fails safely: auth errors, model errors, aborts, or empty inspector outputs fall back to the original result.
+
+## Requirements
+
+- A current Pi installation.
+- An active model with valid authentication. By default, the extension uses that model for inspection.
+- Network access when the selected inspector model is hosted remotely.
+
+The extension still loads without an available authenticated model, but eligible results pass through unchanged. Authentication and inspection failures are currently silent.
 
 ## Installation
 
@@ -57,9 +65,9 @@ Command behavior:
 - `steps` toggles whether the inspector trace is included in parent-visible output.
 - `reload` reloads configuration from disk.
 
-When a tool result is compacted, the parent-visible output includes a compact header followed by the distilled result. The full raw result is not included in the compacted message. Metadata about the inspection is stored in the tool result details under `toolResultCompactor`.
+When a tool result is compacted, the parent-visible output includes a compact header followed by the distilled result and its `Efficiency:` line. The full raw result is replaced and is not retained in the compacted message or extension metadata. If the inspector omits something important, rerun the original tool call to recover it. Metadata about the inspection is stored in the tool result details under `toolResultCompactor`.
 
-Set `showHeader` to `false` in the config if you do not want the visible marker.
+Set `showHeader` or `includeEfficiencyInOutput` to `false` if you do not want those visible markers.
 
 ## Configuration
 
@@ -85,11 +93,13 @@ The extension works without configuration. Defaults are equivalent to:
 }
 ```
 
-Configuration is loaded only from the root Pi config path:
+Configuration is loaded only from this fixed path:
 
 ```text
 ~/.pi/tool-result-compactor.json
 ```
+
+This path does not currently follow the `PI_CODING_AGENT_DIR` override.
 
 Create the file once for your Pi installation:
 
@@ -122,14 +132,14 @@ Then run `/toolcompact reload` inside Pi after changing the file.
 
 ### Prompt and output customization
 
-The default behavior is intentionally minimal: the inspector produces parent-agent-ready facts, and the extension hides the final `Efficiency:` metadata line from the visible tool output while preserving the verdict in `details.toolResultCompactor.verdict`.
+By default, the inspector produces parent-agent-ready facts and the extension displays both the compact header and final `Efficiency:` metadata line. The verdict is also preserved in `details.toolResultCompactor.verdict`.
 
-To debug or make compaction visible, set:
+For quieter parent-visible output, set:
 
 ```json
 {
-  "showHeader": true,
-  "includeEfficiencyInOutput": true
+  "showHeader": false,
+  "includeEfficiencyInOutput": false
 }
 ```
 
@@ -147,11 +157,17 @@ To use a specific model, set `inspectorModel` to `provider/model-id`, for exampl
 }
 ```
 
-The provider and model must already be available in Pi's model registry.
+The provider and model must already be available in Pi's model registry. If the configured model cannot be found, the extension currently falls back to the active Pi model.
+
+## Cost, latency, and output fidelity
+
+Each eligible tool result creates an additional model request and waits for it to finish. This can increase latency and provider cost, especially with the default `minChars` of `600`, several parallel tool calls, or an expensive active model. Consider selecting a fast, inexpensive inspector model, increasing `minChars`, reducing `maxTokens`, or narrowing `includeTools`.
+
+The inspector is model-driven: a non-empty response replaces the raw result even when it is not shorter or accidentally omits useful information. The extension does not currently compare output sizes or preserve the full raw result. Results longer than `maxInputChars` are truncated before inspection, so information beyond that boundary is not available to the inspector.
 
 ## Privacy and security
 
-Tool output selected for compaction is sent to the configured inspector model. Do not enable this extension for tools whose raw output should not be sent to that model provider.
+Tool output selected for compaction—including command arguments and recent conversation goal context—is sent to the configured inspector model. Do not enable this extension for tools whose raw output or surrounding context should not be sent to that model provider.
 
 Use `excludeTools` or `includeTools` to control exactly which tools are compacted.
 
