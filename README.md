@@ -84,17 +84,17 @@ The extension works without configuration. Defaults are equivalent to:
 }
 ```
 
-Configuration is loaded only from this project-local path:
+Configuration is loaded only from the root Pi agent config path:
 
 ```text
-.pi/tool-result-compactor.json
+~/.pi/agent/tool-result-compactor.json
 ```
 
-Create the file in the project where you run Pi:
+Create the file once for your Pi agent:
 
 ```bash
-mkdir -p .pi
-cp config.example.json .pi/tool-result-compactor.json
+mkdir -p ~/.pi/agent
+cp config.example.json ~/.pi/agent/tool-result-compactor.json
 ```
 
 Then run `/toolcompact reload` inside Pi after changing the file.

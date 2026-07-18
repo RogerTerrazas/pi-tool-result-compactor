@@ -28,7 +28,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
-  CONFIG_DIR_NAME,
+  getAgentDir,
   type ExtensionAPI,
   type ExtensionContext,
   type ToolResultEvent,
@@ -103,8 +103,8 @@ const DEFAULT_CONFIG: ProxyConfig = {
   stepsInOutput: false,
 };
 
-function loadConfig(cwd = process.cwd()): ProxyConfig {
-  const configPath = join(cwd, CONFIG_DIR_NAME, "tool-result-compactor.json");
+function loadConfig(): ProxyConfig {
+  const configPath = join(getAgentDir(), "tool-result-compactor.json");
 
   try {
     if (!existsSync(configPath)) return { ...DEFAULT_CONFIG };
@@ -224,7 +224,7 @@ export default function (pi: ExtensionAPI) {
   };
 
   pi.on("session_start", async (_event, ctx) => {
-    cfg = loadConfig(ctx.cwd);
+    cfg = loadConfig();
     if (cfg.enabled) {
       ctx.ui.setStatus?.("toolcompact", "tool-compact: on");
     }
@@ -371,7 +371,7 @@ export default function (pi: ExtensionAPI) {
       if (arg === "on") cfg.enabled = true;
       else if (arg === "off") cfg.enabled = false;
       else if (arg === "steps") cfg.stepsInOutput = !cfg.stepsInOutput;
-      else if (arg === "reload") cfg = loadConfig(ctx.cwd);
+      else if (arg === "reload") cfg = loadConfig();
 
       const model = cfg.inspectorModel ?? "parent model";
       const inc = cfg.includeTools.length ? cfg.includeTools.join(",") : "all (minus excluded)";
