@@ -25,13 +25,13 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 
-import {
-  getAgentDir,
-  type ExtensionAPI,
-  type ExtensionContext,
-  type ToolResultEvent,
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  ToolResultEvent,
 } from "@earendil-works/pi-coding-agent";
 import { complete } from "@earendil-works/pi-ai/compat";
 import type { Context, Model } from "@earendil-works/pi-ai";
@@ -104,7 +104,7 @@ const DEFAULT_CONFIG: ProxyConfig = {
 };
 
 function loadConfig(): ProxyConfig {
-  const configPath = join(getAgentDir(), "tool-result-compactor.json");
+  const configPath = join(homedir(), ".pi", "tool-result-compactor.json");
 
   try {
     if (!existsSync(configPath)) return { ...DEFAULT_CONFIG };
