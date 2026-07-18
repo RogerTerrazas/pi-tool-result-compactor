@@ -1,10 +1,10 @@
 {
   "enabled": true,
   "inspectorModel": null,
-  "maxTokens": 2000,
-  "minChars": 0,
-  "maxInputChars": 80000,
-  "excludeTools": ["edit", "write"],
+  "maxTokens": 40000,
+  "minChars": 500,
+  "maxInputChars": 200000,
+  "excludeTools": ["edit", "write", "read"],
   "includeTools": [],
   "passThroughErrors": true,
   "recordSteps": true,
@@ -13,5 +13,5 @@
   "inspectorInputTemplate": "Goal:\n{goal}\n\nTool:\n{toolName}\n\nArguments:\n{toolArgs}\n\nRaw output:\n{rawOutput}",
   "showHeader": false,
   "headerTemplate": "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
-  "includeEfficiencyInOutput": false
+  "includeEfficiencyInOutput": true
 }

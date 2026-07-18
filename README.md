@@ -69,10 +69,10 @@ The extension works without configuration. Defaults are equivalent to:
 {
   "enabled": true,
   "inspectorModel": null,
-  "maxTokens": 2000,
-  "minChars": 0,
-  "maxInputChars": 80000,
-  "excludeTools": ["edit", "write"],
+  "maxTokens": 40000,
+  "minChars": 500,
+  "maxInputChars": 200000,
+  "excludeTools": ["edit", "write", "read"],
   "includeTools": [],
   "passThroughErrors": true,
   "recordSteps": true,
@@ -81,7 +81,7 @@ The extension works without configuration. Defaults are equivalent to:
   "inspectorInputTemplate": "Goal:\n{goal}\n\nTool:\n{toolName}\n\nArguments:\n{toolArgs}\n\nRaw output:\n{rawOutput}",
   "showHeader": false,
   "headerTemplate": "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
-  "includeEfficiencyInOutput": false
+  "includeEfficiencyInOutput": true
 }
 ```
 
@@ -106,10 +106,10 @@ Then run `/toolcompact reload` inside Pi after changing the file.
 | --- | --- | --- | --- |
 | `enabled` | boolean | `true` | Enables or disables compaction. |
 | `inspectorModel` | string/null | `null` | Optional inspector model in `provider/model-id` form. `null` uses the active Pi model. |
-| `maxTokens` | number | `2000` | Maximum tokens for the inspector response. |
-| `minChars` | number | `0` | Skip compaction for outputs shorter than this many characters. |
-| `maxInputChars` | number | `80000` | Truncate raw tool output before sending it to the inspector model. |
-| `excludeTools` | string[] | `["edit", "write"]` | Tool names that should never be compacted. |
+| `maxTokens` | number | `40000` | Maximum tokens for the inspector response. |
+| `minChars` | number | `500` | Skip compaction for outputs shorter than this many characters. |
+| `maxInputChars` | number | `200000` | Truncate raw tool output before sending it to the inspector model. |
+| `excludeTools` | string[] | `["edit", "write", "read"]` | Tool names that should never be compacted. |
 | `includeTools` | string[] | `[]` | If non-empty, only these tool names are compacted. |
 | `passThroughErrors` | boolean | `true` | If true, errored tool results are not compacted. |
 | `recordSteps` | boolean | `true` | Store the inspector's trace in result metadata. |
@@ -118,7 +118,7 @@ Then run `/toolcompact reload` inside Pi after changing the file.
 | `inspectorInputTemplate` | string | built-in template | User prompt template. Supports `{goal}`, `{toolName}`, `{toolArgs}`, `{rawOutput}`, `{rawChars}`. |
 | `showHeader` | boolean | `false` | Prepend a compact marker before the distilled output. |
 | `headerTemplate` | string | `[compacted {toolName}: {rawChars}→{distilledChars} chars]` | Header template when `showHeader` is true. Also supports `{verdict}` and `{inspectorModel}`. |
-| `includeEfficiencyInOutput` | boolean | `false` | Keep the final `Efficiency:` metadata line visible to the parent agent. The verdict is stored in details either way. |
+| `includeEfficiencyInOutput` | boolean | `true` | Keep the final `Efficiency:` metadata line visible to the parent agent. The verdict is stored in details either way. |
 
 ### Prompt and output customization
 

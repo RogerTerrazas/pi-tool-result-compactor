@@ -152,12 +152,12 @@ function stripEfficiencyLine(text: string): string {
 const DEFAULT_CONFIG: ProxyConfig = {
   enabled: true,
   inspectorModel: null,
-  maxTokens: 2000,
-  minChars: 0,
-  maxInputChars: 80_000,
+  maxTokens: 40_000,
+  minChars: 500,
+  maxInputChars: 200_000,
   // Mutations, interactive prompts, and delegation tooling itself are not
   // useful to distill -- pass them through.
-  excludeTools: ["edit", "write"],
+  excludeTools: ["edit", "write", "read"],
   includeTools: [],
   passThroughErrors: true,
   recordSteps: true,
@@ -166,7 +166,7 @@ const DEFAULT_CONFIG: ProxyConfig = {
   inspectorInputTemplate: DEFAULT_INSPECTOR_INPUT_TEMPLATE,
   showHeader: false,
   headerTemplate: "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
-  includeEfficiencyInOutput: false,
+  includeEfficiencyInOutput: true,
 };
 
 function loadConfig(): ProxyConfig {
