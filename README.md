@@ -57,13 +57,9 @@ Command behavior:
 - `steps` toggles whether the inspector trace is included in parent-visible output.
 - `reload` reloads configuration from disk.
 
-When a tool result is compacted, the parent-visible output begins with a short marker such as:
+When a tool result is compacted, the parent-visible output is the distilled result only by default. The full raw result is not included in the compacted message. Metadata about the inspection is stored in the tool result details under `toolResultCompactor`.
 
-```text
-🔎 inspected by inspector (read, 12000→900 chars)
-```
-
-The full raw result is not included in the compacted message. Metadata about the inspection is stored in the tool result details under `toolResultCompactor`.
+If you want visible markers, enable `showHeader` in the config.
 
 ## Configuration
 
@@ -80,7 +76,12 @@ The extension works without configuration. Defaults are equivalent to:
   "includeTools": [],
   "passThroughErrors": true,
   "recordSteps": true,
-  "stepsInOutput": false
+  "stepsInOutput": false,
+  "inspectorPrompt": "You are a context-preserving tool-output compactor...",
+  "inspectorInputTemplate": "Goal:\n{goal}\n\nTool:\n{toolName}\n\nArguments:\n{toolArgs}\n\nRaw output:\n{rawOutput}",
+  "showHeader": false,
+  "headerTemplate": "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
+  "includeEfficiencyInOutput": false
 }
 ```
 
@@ -113,6 +114,26 @@ Then run `/toolcompact reload` inside Pi after changing the file.
 | `passThroughErrors` | boolean | `true` | If true, errored tool results are not compacted. |
 | `recordSteps` | boolean | `true` | Store the inspector's trace in result metadata. |
 | `stepsInOutput` | boolean | `false` | Include the inspector trace in parent-visible output. |
+| `inspectorPrompt` | string | built-in compact prompt | System prompt used by the inspector model. |
+| `inspectorInputTemplate` | string | built-in template | User prompt template. Supports `{goal}`, `{toolName}`, `{toolArgs}`, `{rawOutput}`, `{rawChars}`. |
+| `showHeader` | boolean | `false` | Prepend a compact marker before the distilled output. |
+| `headerTemplate` | string | `[compacted {toolName}: {rawChars}→{distilledChars} chars]` | Header template when `showHeader` is true. Also supports `{verdict}` and `{inspectorModel}`. |
+| `includeEfficiencyInOutput` | boolean | `false` | Keep the final `Efficiency:` metadata line visible to the parent agent. The verdict is stored in details either way. |
+
+### Prompt and output customization
+
+The default behavior is intentionally minimal: the inspector produces parent-agent-ready facts, and the extension hides the final `Efficiency:` metadata line from the visible tool output while preserving the verdict in `details.toolResultCompactor.verdict`.
+
+To debug or make compaction visible, set:
+
+```json
+{
+  "showHeader": true,
+  "includeEfficiencyInOutput": true
+}
+```
+
+To customize the inspector behavior, override `inspectorPrompt`. Keep an `Efficiency: efficient|inefficient -- reason` line if you want verdict extraction to keep working.
 
 ### Inspector model selection
 

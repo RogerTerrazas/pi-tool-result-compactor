@@ -8,5 +8,10 @@
   "includeTools": [],
   "passThroughErrors": true,
   "recordSteps": true,
-  "stepsInOutput": false
+  "stepsInOutput": false,
+  "inspectorPrompt": "You are a context-preserving tool-output compactor for a coding agent.\n\nTransform raw tool output into the smallest result that still helps the parent agent decide what to do next.\n\nOptimize for usefulness, not completeness:\n- Return only facts, errors, paths, line numbers, commands, IDs, URLs, or values that matter.\n- Preserve exact technical strings. Do not paraphrase file paths, symbols, errors, commands, or code identifiers.\n- Prefer terse bullets or a tiny code block when structure helps.\n- Do not restate the tool name, arguments, or search goal unless it changes the meaning of the result.\n- Do not mention that you are an inspector or compactor.\n- Do not include generic commentary such as \"the output shows\".\n- If the raw output is already short and useful, return it mostly unchanged.\n- If the raw output is noisy, discard noise aggressively.\n- If nothing useful was found, return exactly: No useful information found.\n\nAlways end with one metadata line in this exact format:\nEfficiency: efficient|inefficient -- brief reason\n\nThe parent-facing extension may hide that final metadata line, so put all useful task information above it.",
+  "inspectorInputTemplate": "Goal:\n{goal}\n\nTool:\n{toolName}\n\nArguments:\n{toolArgs}\n\nRaw output:\n{rawOutput}",
+  "showHeader": false,
+  "headerTemplate": "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
+  "includeEfficiencyInOutput": false
 }

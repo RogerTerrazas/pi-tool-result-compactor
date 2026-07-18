@@ -76,6 +76,21 @@ interface ProxyConfig {
    * is also seen by the parent agent and costs context tokens. Default off.
    */
   stepsInOutput: boolean;
+
+  /** System prompt used for the inspector model. */
+  inspectorPrompt: string;
+
+  /** User prompt template sent to the inspector model. */
+  inspectorInputTemplate: string;
+
+  /** If true, prepend a compact marker before the distilled output. */
+  showHeader: boolean;
+
+  /** Header template used when showHeader is true. */
+  headerTemplate: string;
+
+  /** If true, keep the inspector's Efficiency line visible to the parent agent. */
+  includeEfficiencyInOutput: boolean;
 }
 
 /** One recorded step in the inspector model's trace. */
@@ -86,6 +101,52 @@ interface ProxyStep {
   step: string;
   /** Human-readable detail for this phase. */
   detail: string;
+}
+
+const DEFAULT_INSPECTOR_PROMPT = `You are a context-preserving tool-output compactor for a coding agent.
+
+Transform raw tool output into the smallest result that still helps the parent agent decide what to do next.
+
+Optimize for usefulness, not completeness:
+- Return only facts, errors, paths, line numbers, commands, IDs, URLs, or values that matter.
+- Preserve exact technical strings. Do not paraphrase file paths, symbols, errors, commands, or code identifiers.
+- Prefer terse bullets or a tiny code block when structure helps.
+- Do not restate the tool name, arguments, or search goal unless it changes the meaning of the result.
+- Do not mention that you are an inspector or compactor.
+- Do not include generic commentary such as "the output shows".
+- If the raw output is already short and useful, return it mostly unchanged.
+- If the raw output is noisy, discard noise aggressively.
+- If nothing useful was found, return exactly: No useful information found.
+
+Always end with one metadata line in this exact format:
+Efficiency: efficient|inefficient -- brief reason
+
+The parent-facing extension may hide that final metadata line, so put all useful task information above it.`;
+
+const DEFAULT_INSPECTOR_INPUT_TEMPLATE = `Goal:
+{goal}
+
+Tool:
+{toolName}
+
+Arguments:
+{toolArgs}
+
+Raw output:
+{rawOutput}`;
+
+function renderTemplate(template: string, values: Record<string, string>): string {
+  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, key) => values[key] ?? match);
+}
+
+function stripEfficiencyLine(text: string): string {
+  return text
+    .split("
+")
+    .filter((line) => !/^\s*\*{0,2}efficiency:\s*/i.test(line))
+    .join("
+")
+    .trim();
 }
 
 const DEFAULT_CONFIG: ProxyConfig = {
@@ -101,6 +162,11 @@ const DEFAULT_CONFIG: ProxyConfig = {
   passThroughErrors: true,
   recordSteps: true,
   stepsInOutput: false,
+  inspectorPrompt: DEFAULT_INSPECTOR_PROMPT,
+  inspectorInputTemplate: DEFAULT_INSPECTOR_INPUT_TEMPLATE,
+  showHeader: false,
+  headerTemplate: "[compacted {toolName}: {rawChars}→{distilledChars} chars]",
+  includeEfficiencyInOutput: false,
 };
 
 function loadConfig(): ProxyConfig {
@@ -181,34 +247,6 @@ function resolveInspectorModel(
   return ctx.model as Model<any> | undefined;
 }
 
-const SYSTEM_PROMPT = `You are a tool-output inspector model inside a coding agent.
-
-The parent agent just ran a tool or MCP call. You are given:
-- the broader GOAL the parent is pursuing,
-- the COMMAND it ran (tool name + arguments),
-- the RAW OUTPUT of that command.
-
-Your job: return ONLY the information the parent actually needs to keep going,
-and a blunt verdict on whether this call was an efficient step toward the goal.
-
-Rules:
-- Extract and keep only the relevant data. Drop noise, boilerplate, repetition,
-  irrelevant files/lines, banners, and anything that does not advance the goal.
-- Preserve exact identifiers the parent will need verbatim: file paths, line
-  numbers, symbol names, IDs, URLs, error messages, command output it must act on.
-- Never invent data. If the output is empty or unhelpful, say so plainly.
-- If the output contains a failure/error that matters, keep the actionable error.
-- Be concise, but not lossy: the parent should not need the raw output afterward.
-- Do not ask questions. Do not mention that you are an AI.
-
-Reply in exactly this Markdown shape and nothing else:
-
-**Looking for:** <one line: what the parent was after>
-**Command:** <tool>(<short arg summary>)
-**Useful data:**
-<the distilled, relevant information -- bullets or short blocks; verbatim ids preserved>
-**Efficiency:** <efficient | inefficient> -- <one line: why; if inefficient, the better next move>`;
-
 // -----------------------------------------------------------------------------
 // Extension
 // -----------------------------------------------------------------------------
@@ -279,14 +317,16 @@ export default function (pi: ExtensionAPI) {
         }`,
       );
 
-      const userPrompt = [
-        `GOAL:\n${goal}`,
-        `\nCOMMAND:\nTool: ${event.toolName}\nArguments: ${argsStr}`,
-        `\nRAW OUTPUT:\n${rawForModel}`,
-      ].join("\n");
+      const userPrompt = renderTemplate(cfg.inspectorInputTemplate, {
+        goal,
+        toolName: event.toolName,
+        toolArgs: argsStr,
+        rawOutput: rawForModel,
+        rawChars: String(raw.length),
+      });
 
       const context: Context = {
-        systemPrompt: SYSTEM_PROMPT,
+        systemPrompt: cfg.inspectorPrompt,
         messages: [{ role: "user", content: [{ type: "text", text: userPrompt }] }],
       };
 
@@ -326,16 +366,33 @@ export default function (pi: ExtensionAPI) {
         )}% reduction)${verdict ? ` | verdict=${verdict}` : ""}`,
       );
 
-      const header = `🔎 inspected by inspector (${event.toolName}, ${raw.length}→${distilled.length} chars)`;
+      const parentText = cfg.includeEfficiencyInOutput
+        ? distilled
+        : stripEfficiencyLine(distilled) || distilled;
+      const header = cfg.showHeader
+        ? `${renderTemplate(cfg.headerTemplate, {
+            toolName: event.toolName,
+            rawChars: String(raw.length),
+            distilledChars: String(parentText.length),
+            verdict,
+            inspectorModel: `${model.provider}/${model.id}`,
+          })}
+
+`
+        : "";
       const stepsBlock =
         cfg.stepsInOutput && steps.length
-          ? `\n\n**Inspector steps:**\n${steps
-              .map((s) => `- [${s.atMs}ms] ${s.step}: ${s.detail}`)
-              .join("\n")}`
+          ? `
+
+**Inspector steps:**
+${steps
+              .map((s) => `> - ${s.atMs}ms ${s.step}: ${s.detail}`)
+              .join("
+")}`
           : "";
 
       return {
-        content: [{ type: "text", text: `${header}\n\n${distilled}${stepsBlock}` }],
+        content: [{ type: "text", text: `${header}${parentText}${stepsBlock}` }],
         details: {
           ...(event.details && typeof event.details === "object" ? event.details : {}),
           toolResultCompactor: {
