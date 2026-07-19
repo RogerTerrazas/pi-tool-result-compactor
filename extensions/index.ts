@@ -141,11 +141,9 @@ function renderTemplate(template: string, values: Record<string, string>): strin
 
 function stripEfficiencyLine(text: string): string {
   return text
-    .split("
-")
+    .split("\n")
     .filter((line) => !/^\s*\*{0,2}efficiency:\s*/i.test(line))
-    .join("
-")
+    .join("\n")
     .trim();
 }
 
@@ -327,7 +325,13 @@ export default function (pi: ExtensionAPI) {
 
       const context: Context = {
         systemPrompt: cfg.inspectorPrompt,
-        messages: [{ role: "user", content: [{ type: "text", text: userPrompt }] }],
+        messages: [
+          {
+            role: "user",
+            content: [{ type: "text", text: userPrompt }],
+            timestamp: Date.now(),
+          },
+        ],
       };
 
       const callStart = Date.now();
@@ -374,7 +378,7 @@ export default function (pi: ExtensionAPI) {
             toolName: event.toolName,
             rawChars: String(raw.length),
             distilledChars: String(parentText.length),
-            verdict,
+            verdict: verdict ?? "",
             inspectorModel: `${model.provider}/${model.id}`,
           })}
 
@@ -387,8 +391,7 @@ export default function (pi: ExtensionAPI) {
 **Inspector steps:**
 ${steps
               .map((s) => `> - ${s.atMs}ms ${s.step}: ${s.detail}`)
-              .join("
-")}`
+              .join("\n")}`
           : "";
 
       return {
